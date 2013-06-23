@@ -6,12 +6,16 @@
  */
 #include <iostream>
 #include <map>
+#include <cstring>
+
 #include "string.h"
 #include "Server.h"
 
 using namespace std;
 
-TCP_Server::TCP_Server() {
+
+
+TCP_Server::TCP_Server() :  MAX_DATA_LEN(1025) {
 	StartServer();
 	sleep(1);
 }
@@ -52,7 +56,7 @@ void TCP_Server::CreateSocket()
 
 	// Create a connection queue and initialize readfds to handle input
 	// from server_sockfd
-	listen(server_sockfd,5);
+	listen(server_sockfd, 10 );
 
 	printf("Listen queue created... Awaiting clients...\n");
 	FD_ZERO(&readfds);	// Initialize readfds with no fds...
@@ -75,47 +79,34 @@ unsigned int TCP_Server::calc_crc(unsigned char *ptr, int count) {
   return crc;
 }
 
-int TCP_Server::send_frame(int fd,unsigned char cmd,unsigned char dest_id,unsigned char *data,int len)
+int TCP_Server::send_frame(int fd, const char *data, int len )
 {
-	int i;
-	unsigned char frame_2_send[1024];
-	memset(frame_2_send, 0, 1024);
-
-	frame_2_send[0]=0xa3; // Our Protocol's SOF
-	frame_2_send[1]=0x27; //DBEX_SERVER;
-	frame_2_send[2]=dest_id;
-	frame_2_send[3]=cmd;
-	frame_2_send[4]=((len+6)/256)&0xff;
-	frame_2_send[5]=(len+6)&0xff;
-	for(i=6;i<(len+6);i++,data++)
-	  frame_2_send[i]=*data;
-
-	printf("Size = %d",i);
-	int chksum=calc_crc(frame_2_send,len+6);
-	frame_2_send[i]=(chksum>>8)&0xff;
-	frame_2_send[i+1]=chksum&0xff;
-
-	printf("\nSending... ");
-	write(fd,frame_2_send,i+2);
-	for(i=0;i<len+8;i++)
-		printf("%d,",frame_2_send[i]);
+	if( ClientTable.find(fd)!=ClientTable.end()) {
+		char frame_2_send[ MAX_DATA_LEN ];
+		memset(frame_2_send, 0, MAX_DATA_LEN );
+		if( len>=MAX_DATA_LEN ) throw PacketSizeException("Oversized Packet.");
+		else {
+			strncpy( frame_2_send, data, len );
+			write(fd,frame_2_send,len);
+		}
+	}
 }
 
-int TCP_Server::add_client(int fd)
+int TCP_Server::add_client()
 {
     client_len=sizeof(client_address);
     client_sockfd=accept(server_sockfd,(struct sockaddr*)&client_address, &client_len);
     FD_SET(client_sockfd, &readfds);
 	++numClientConnected;
-    printf("adding client on fd %d\n",client_sockfd);
     if( ClientTable.find(client_sockfd)!=ClientTable.end() ) {
     	cerr<<"This client already exists."<<client_sockfd;
     }
     else {
     	ClientInfo client; client.client_fd = client_sockfd;
+    	ClientTable[client_sockfd] = client;
     }
 	for(map<int,ClientInfo>::iterator it=ClientTable.begin();it!=ClientTable.end();++it)
-		printf("\nClient[%d] is at fd=%d ",it->first,it->second.client_fd);
+		cout<<"Client["<<it->first<<"] is at fd="<<it->second.client_fd<<endl;;
 
     return client_sockfd;
 }
@@ -125,7 +116,9 @@ void TCP_Server::remove_client(int fd)
 	close(fd);
 	FD_CLR(fd,&readfds);
 	--numClientConnected;
-
+	map<int,ClientInfo>::iterator it = ClientTable.find(fd);
+	if(it!=ClientTable.end())
+		ClientTable.erase(it);
 }
 
 
@@ -145,8 +138,7 @@ void *TCP_Server::listen_thread(void *arg)
 		  {
 			if( fd== servInstance->server_sockfd )
 			{
-			   servInstance->add_client(fd);
-			   //StartDebug
+			   servInstance->add_client();
 			   for(map<int,ClientInfo>::iterator it=servInstance->ClientTable.begin();
 					   it!=servInstance->ClientTable.end();++it) {
 			   		printf("\nClient[%d] is at fd=%d ",it->first,it->second.client_fd);
@@ -161,7 +153,7 @@ void *TCP_Server::listen_thread(void *arg)
 				servInstance->remove_client(fd);
 			  }
 			  else {
-				  servInstance->read_client(fd); //display_once=0;
+				  servInstance->read_client(fd);
 			  }
 			}
 		   }
@@ -183,13 +175,6 @@ void TCP_Server::read_client(int fd) {
 	int len,client,i;
 	memset(buf,0,MAX_BUFSIZE);
 	len=read(fd,&buf,MAX_BUFSIZE);
-
-	printf("\nrecieved... %s (%d bytes) from fd %d\n",buf,len,fd);
-	for(i=0;i<len;i++)
-	{
-		printf("%x,",buf[i]);
-	}
-
 	check_command(fd,len,(unsigned char*)buf);
 }
 
