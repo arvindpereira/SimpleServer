@@ -7,7 +7,7 @@
 #include <iostream>
 #include <map>
 #include <cstring>
-
+#include "Client.h"
 #include "string.h"
 #include "Server.h"
 
@@ -109,6 +109,10 @@ int TCP_Server::add_client()
 		cout<<"Client["<<it->first<<"] is at fd="<<it->second.client_fd<<endl;;
 
     return client_sockfd;
+}
+
+map<int, ClientInfo> TCP_Server::getClientTable() {
+	return ClientTable;
 }
 
 void TCP_Server::remove_client(int fd)

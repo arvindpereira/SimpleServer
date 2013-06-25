@@ -63,6 +63,8 @@ public:
 	void StartServer();
 	void StopServer();
 
+	map<int, ClientInfo> getClientTable();
+
 	virtual void read_client(int fd);
 	virtual void check_command(int, int, unsigned char *);
 	static void *listen_thread(void *arg);
