@@ -8,8 +8,12 @@
 #include <iostream>
 #include <signal.h>
 #include <cstring>
+#include <cstdlib>
+#include <time.h>
+#include <cmath>
 #include "Server.h"
 #include "Client.h"
+#include "VerosimAUVCommProt.h"
 
 using std::cerr;
 using std::cout;
@@ -35,19 +39,29 @@ void captureQuitSignal()
 	sigaction(SIGKILL, &sa, NULL);
 }
 
+using namespace VerosimAUVInterfaceModule;
 int main()
 {
+	//VerosimAUVInterfaceModuleObject auvIM(
+	//		VerosimAUVInterfaceModuleObject::AutopilotCommand);
+	VerosimAUVInterfaceModuleAutopilotCommand auvAutoPilot(1,0,5);
+
+	srand(time(NULL));
 	captureQuitSignal();
 	int i=0;
 	int client_to_talk_to = 4;
 
 	string receiveStr="";
 	while(1) {
+		float rand1 = rand()%100/100.0, rand2=rand()%180/180.0*M_PI;
 		sleep(1);
 		cout<<i++<<endl;
-
-		serv.send_frame(client_to_talk_to,(const char*)"Testing...",
-				strlen("Testing..."));
+		VerosimAUVInterfaceModuleAutopilotCommand auvAutoPilot(1+rand1,0+rand2,10);
+		//serv.send_frame(client_to_talk_to,(const char*)"Testing...",
+		//		strlen("Testing..."));
+		string autoPilotStr = auvAutoPilot.toString();
+		serv.send_frame(client_to_talk_to, (char*)autoPilotStr.c_str(),
+				autoPilotStr.length() );
 	}
 }
 

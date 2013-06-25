@@ -47,9 +47,7 @@ using std::string;
 class TCP_Client {
 #ifdef _WINDOWS_
 	WSADATA wsaData; // Windows Socket data object
-	struct addrinfo *result,
-					*ptr,
-					hints;
+	struct addrinfo *result, *ptr, hints;
 	int iResult;
 	SOCKET ClientSocket;
 

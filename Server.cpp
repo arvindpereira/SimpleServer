@@ -13,8 +13,6 @@
 
 using namespace std;
 
-
-
 TCP_Server::TCP_Server() :  MAX_DATA_LEN(1025) {
 	StartServer();
 	sleep(1);
