@@ -28,7 +28,7 @@ public:
 
 	// construction 
 public:
-	VerosimAUVInterfaceModuleObject(Type type){type = type;};
+	VerosimAUVInterfaceModuleObject(Type _type){type = _type;};
 	virtual ~VerosimAUVInterfaceModuleObject(){};
 
 	// services
