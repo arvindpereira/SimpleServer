@@ -14,40 +14,46 @@
 #include "Server.h"
 #include "Client.h"
 #include "VerosimAUVCommProt.h"
+#include "SignalTools.h"
+#include "TimeTools.h"
 
+using namespace ArvindsTools;
 using std::cerr;
 using std::cout;
 using std::endl;
 
 TCP_Server serv;
-struct sigaction sa;
 
 void quitApp(int signum) {
 	cerr<<"Quitting Application.";
 	serv.StopServer();
-
+	SingletonSignalHandler::getInstance()->endSignalCapture();
 	sleep(1);
 	exit(0);
 }
 
-void captureQuitSignal()
-{
-	memset(&sa, 0, sizeof(sa));
-	sa. sa_handler = &quitApp;
-	sigaction(SIGINT, &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
-	sigaction(SIGKILL, &sa, NULL);
+void SetupMyselfForExit() {
+	SingletonSignalHandler::getInstance()->captureSignal( InterruptSignal, ::quitApp );
+	SingletonSignalHandler::getInstance()->captureSignal( TerminateSignal, ::quitApp );
+	//SingletonSignalHandler::getInstance()->captureSignal( KillSignal, ::quitApp );
 }
 
 using namespace VerosimAUVInterfaceModule;
+
 int main()
 {
+	// Capture quit signals
+	SetupMyselfForExit();
+
+	// Get our neat timer.
+	TimeTools myTimer;
+
 	//VerosimAUVInterfaceModuleObject auvIM(
 	//		VerosimAUVInterfaceModuleObject::AutopilotCommand);
 	VerosimAUVInterfaceModuleAutopilotCommand auvAutoPilot(1,0,5);
 
 	srand(time(NULL));
-	captureQuitSignal();
+
 	int i=0;
 	int client_to_talk_to = 4;
 
@@ -75,7 +81,7 @@ int main()
 				z_change_factor*=-1;
 			}
 		}
-		cout<<"Path Segment Command: Vel="<<vel<<" m/s, x="<<x<<", y="<<y<<", z="<<z<<endl;
+		cout<<myTimer.timeSinceStart()<<": Path Segment Command: Vel="<<vel<<" m/s, x="<<x<<", y="<<y<<", z="<<z<<endl;
 		//cout<<"Autopilot command: Vel="<<vel<<" m/s, Psi="<<psi*180/M_PI<<" deg, Depth="<<z<<" m."<<endl;
 		//VerosimAUVInterfaceModuleAutopilotCommand auvAutoPilot(1+rand1,0+rand2*0.05,60);
 		VerosimAUVInterfaceModulePathSegmentCharacterization auvPathSegment(vel,x,y,z);

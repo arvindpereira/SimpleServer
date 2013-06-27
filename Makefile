@@ -3,7 +3,7 @@
 # Modify the includes, sources, headers, executable and
 # other flags accordingly!
 INCLUDES = -I ./ -I/usr/local/include
-LIBS = -L/usr/lib/ -lm -lpthread -pthread
+LIBS = -L/usr/lib/ -lm -pthread -lpthread
 
 CC = g++
 DEBUG = -g
@@ -11,10 +11,12 @@ LFLAGS = -Wall $(DEBUG)
 CFLAGS = -Wall -c
 
 SOURCES = Server.cpp \
-	  VerosimAUVInterface.cpp
+	  VerosimAUVInterface.cpp \
+	  SignalTools.cpp
 
 HEADERS = Client.h \
 	  Server.h \
+	  SignalTools.h \
 	  VerosimAUVCommProt.h
 
 OBJ = $(SOURCES:.cpp=.o)
