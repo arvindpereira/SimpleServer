@@ -276,17 +276,18 @@ int main() {
 
 	double x=0,y=0,z=0,psi=0.0;
 
+	// Create a table to get information about the clients that are connected.
 	map<int, ClientInfo> clTable;
 	map<int, ClientInfo>::iterator clt_iter;
 	while ( true ) {
-		usleep( 500000 ); cout.width(14);
+		usleep( 100000 ); cout.width(14);
 		clTable = myServer.getClientTable();
 		// Get an autopilot command
 		string autoPilotCmd = generateHelixUsingAutopilotCommand(psi,z,myTimer.timeSinceStart());
 		string pathSegmentCmd = generateRandomPathSegment( x,y,z,myTimer.timeSinceStart());
 
 		for( clt_iter=clTable.begin();clt_iter!=clTable.end(); clt_iter++ ) {
-			pair<int,ClientInfo> clientInfo = *clt_iter;
+			pair<int,ClientInfo> clientInfo = *clt_iter; // Could also use information from ClientInfo instead of broadcasting.
 			//myServer.send_frame(clientInfo.first, autoPilotCmd.c_str(), autoPilotCmd.length());
 			myServer.send_frame(clientInfo.first, pathSegmentCmd.c_str(), pathSegmentCmd.length());
 		}
