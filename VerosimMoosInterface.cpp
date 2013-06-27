@@ -205,14 +205,14 @@ string generateRandomPathSegment( double &x, double &y, double &z, double t )
 	const double minDepth = 2.0, maxDepth = 60.0;
 	double z_change_factor = 0.1;
 	double vel = 1.0;
-	static double lastT; double jumpTime = 20;
+	static double lastT; double sampleTime = 20;
 
 	if( t > tSwitch ) {
-		if( t - lastT > jumpTime ) {
+		if( t - lastT > sampleTime ) {
 			lastT = t;
 			x=rand1*RandomJumpRange; y = rand2*RandomJumpRange;
 			z = z - z_change_factor;
-			if( !(z_change_factor < 2 || z_change_factor>60 ) ) {
+			if( !(z_change_factor < minDepth || z_change_factor> maxDepth ) ) {
 				z_change_factor*=-1;
 			}
 		}
@@ -234,20 +234,22 @@ string generateHelixUsingAutopilotCommand( double &psi, double &z, double t ) {
 	double tSwitch = 20; //Switch to random commands after 20 seconds
 	const double minDepth = 2.0, maxDepth = 60.0;
 	double vel = 1.0;
-	static double lastT; double jumpTime = 1; // Switch every 1 seconds...
-
+	static double lastT;
+	double sampleTime = 1.0;
 
 	if( t > tSwitch ) {
-		lastT = t;
-		psi = psi+ psi_change_factor;
-		if( psi > M_PI ) {
-			psi = -M_PI;
-		} else if ( psi< -M_PI ) {
-			psi = M_PI;
-		}
-		z = z - z_change_factor;
-		if( !(z_change_factor < 2 || z_change_factor>60 ) ) {
-			z_change_factor*=-1;
+		if( t - lastT > sampleTime ) {
+			lastT = t;
+			psi = psi+ psi_change_factor;
+			if( psi > M_PI ) {
+				psi = -M_PI;
+			} else if ( psi< -M_PI ) {
+				psi = M_PI;
+			}
+			z = z - z_change_factor;
+			if( !(z_change_factor < 2 || z_change_factor>60 ) ) {
+				z_change_factor*=-1;
+			}
 		}
 	}
 
@@ -272,12 +274,12 @@ int main() {
 
 	myServer.addCallback(string("Just a Dummy"), fPtr);
 
-	double x=0,y=0,z=0,v=1.0,psi=0.0;
+	double x=0,y=0,z=0,psi=0.0;
 
 	map<int, ClientInfo> clTable;
 	map<int, ClientInfo>::iterator clt_iter;
 	while ( true ) {
-		sleep(1); cout.width(14);
+		usleep( 500000 ); cout.width(14);
 		clTable = myServer.getClientTable();
 		// Get an autopilot command
 		string autoPilotCmd = generateHelixUsingAutopilotCommand(psi,z,myTimer.timeSinceStart());

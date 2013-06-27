@@ -6,6 +6,8 @@
  */
 #include "SignalTools.h"
 
+#ifndef _WINDOWS_ // Never use this in Windoze... ;-)
+
 namespace ArvindsTools {
 
 SingletonSignalHandler* SingletonSignalHandler::mySelf=NULL; // The only pointer to this instance
@@ -46,3 +48,5 @@ void SingletonSignalHandler::endSignalCapture() {
 }
 
 }
+
+#endif

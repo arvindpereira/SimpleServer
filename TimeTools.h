@@ -22,7 +22,7 @@
 
 namespace ArvindsTools {
 /** This class contains tools that are useful for obtaining the current time in
- * seconds, millisseconds and so on.
+ * seconds, milliseconds and so on.
  */
 class TimeTools {
 private:
