@@ -88,6 +88,15 @@ public:
  *  ROS connections using the TCP_Server. My recommendation is to proceed
  *  as shown here. One can either use callbacks as shown below, or
  *  just use something like the switch case statement.
+ *
+ *  In fact for this example, dynamic dispatch through polymorphism
+ *  is a nice threadsafe option. The solution could just be to
+ *  do something based upon the type of object to our base-object pointer.
+ *  It isn't necessary to use the switch-case ( polymorphism should handle this
+ *  situation provided there is an invalid packet type class as well ).
+ *
+ *  Plenty of ways to go about doing this. When it comes to the server itself,
+ *  I allowed the read
  */
 class VerosimMoosInterface : public TCP_Server
 {

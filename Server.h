@@ -38,6 +38,7 @@ typedef struct
 
 
 class TCP_Server {
+protected:
 	const int MAX_DATA_LEN;
 	int numClients;
 	int server_sockfd, client_sockfd;
