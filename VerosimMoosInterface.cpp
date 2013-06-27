@@ -65,10 +65,11 @@ typedef void (*VSMoosCallbacktoDummyFunction)(string str);
 class VSMoosCallbacks : public CommandCallbackHandler {
 	VSMoosCallbacktoDummyFunction dummyFunc;
 public:
-	void AddFunction( std::string _funcName, VSMoosCallbacktoDummyFunction _myFunc ) {
+	bool AddFunction( std::string _funcName, VSMoosCallbacktoDummyFunction _myFunc ) {
 		funcName       = _funcName;
 		dummyFunc         = _myFunc;
 		funcRegistered = true;
+		return funcRegistered;
 	}
 
 	bool CallFunction( std::string str ) {
@@ -112,8 +113,11 @@ public:
 
 	bool addCallback( string funcName, VSMoosCallbacktoDummyFunction func ) {
 		VSMoosCallbacks newCallback;
-		newCallback.AddFunction(funcName, func);
-		callbackTable.push_back(newCallback);
+		bool success = newCallback.AddFunction(funcName, func);
+		if( success ) {
+			callbackTable.push_back(newCallback);
+		}
+		return success;
 	}
 
 	void check_command(int fd, int len, unsigned char *buf) {
@@ -165,7 +169,7 @@ public:
 			{
 				cout<<"Invalid/Unknown command received"<<endl;
 				cout<<"Checking Callbacks...";
-				for(int i=0;i<callbackTable.size();i++) {
+				for(unsigned int i=0;i<callbackTable.size();i++) {
 					callbackTable[i].CallFunction( packetReceived );
 				}
 				break;
@@ -256,7 +260,7 @@ string generateHelixUsingAutopilotCommand( double &psi, double &z, double t ) {
 				psi = M_PI;
 			}
 			z = z - z_change_factor;
-			if( !(z_change_factor < 2 || z_change_factor>60 ) ) {
+			if( !(z_change_factor < minDepth || z_change_factor> maxDepth ) ) {
 				z_change_factor*=-1;
 			}
 		}

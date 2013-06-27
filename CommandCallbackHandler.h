@@ -41,10 +41,11 @@ public:
 	 *
 	 *
 	 * */
-	virtual void AddFunction( std::string _funcName, CommandHandlerFunc _myFunc ) {
+	virtual bool AddFunction( std::string _funcName, CommandHandlerFunc _myFunc ) {
 		funcName       = _funcName;
 		myFunc         = _myFunc;
 		funcRegistered = true;
+		return funcRegistered;
 	}
 
 
