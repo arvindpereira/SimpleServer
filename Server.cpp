@@ -35,7 +35,7 @@ void TCP_Server::StopServer() {
 	terminateListener = true;
 	cerr<<"Stopping Server"<<endl;
 	void *thread_result;
-	int res = pthread_join(listener, &thread_result);
+	pthread_join(listener, &thread_result);
 	cerr<<"Server Stopped";
 }
 
@@ -85,9 +85,11 @@ int TCP_Server::send_frame(int fd, const char *data, int len )
 		if( len>=MAX_DATA_LEN ) throw PacketSizeException("Oversized Packet.");
 		else {
 			strncpy( frame_2_send, data, len );
-			write(fd,frame_2_send,len);
+			len = write(fd,frame_2_send,len);
+			return len;
 		}
 	}
+	return 0;
 }
 
 int TCP_Server::add_client()
@@ -123,7 +125,7 @@ void TCP_Server::remove_client(int fd)
 		ClientTable.erase(it);
 }
 
-
+/** Listen thread - does most of the heavy lifting */
 void *TCP_Server::listen_thread(void *arg)
 {
 	TCP_Server *servInstance=reinterpret_cast<TCP_Server*>(arg);
@@ -134,6 +136,7 @@ void *TCP_Server::listen_thread(void *arg)
 		servInstance->testfds=servInstance->readfds;
 		struct timeval timeout; timeout.tv_sec=1; timeout.tv_usec=500000;
 		int result=select(FD_SETSIZE,&(servInstance->testfds),(fd_set*)0,(fd_set*)0,&timeout);
+		if ( result<0 ) break;
 		for(int fd=0; fd<FD_SETSIZE; fd++)
 		{
 		  if( FD_ISSET(fd,&(servInstance->testfds)) )
@@ -162,7 +165,7 @@ void *TCP_Server::listen_thread(void *arg)
 		}
 	}
 	if(servInstance->terminateListener)
-	  cerr<<"Thread is exiting..."<<endl;
+	  cerr<<"Server listen thread is exiting..."<<endl;
 	pthread_exit(NULL);
 }
 
@@ -173,13 +176,19 @@ void TCP_Server::CloseSocket() {
 	close(server_sockfd);
 }
 
+/** Could be over-ridden - reads data from a particular file-descriptor */
 void TCP_Server::read_client(int fd) {
-	int len,client,i;
+	int len;
 	memset(buf,0,MAX_BUFSIZE);
 	len=read(fd,&buf,MAX_BUFSIZE);
 	check_command(fd,len,(unsigned char*)buf);
 }
 
+/** Should be over-ridden to get domain specific things to happen
+ *  @param fd (int) file descriptor from which we've received this data
+ *  @param len (int) length of data in bytes
+ *  @param buf (UCHAR*) the data received as bytes
+ * */
 void TCP_Server::check_command(int fd, int len, unsigned char *buf ) {
 	for(int i=0;i<len;i++)
 		cout<<buf[i];

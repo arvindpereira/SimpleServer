@@ -53,21 +53,22 @@ class TCP_Server {
 	pthread_t listener;
 public:
 	TCP_Server();
-	~TCP_Server() {}
-	unsigned int calc_crc(unsigned char *ptr, int count);
+	virtual ~TCP_Server() {}
+
 	int send_frame(int fd, const char *data, int len );
-	int add_client();
-	void remove_client(int fd);
 	void CreateSocket();
 	void CloseSocket();
 	void StartServer();
 	void StopServer();
-
 	map<int, ClientInfo> getClientTable();
-
+	// These are meant to be over-ridden
 	virtual void read_client(int fd);
 	virtual void check_command(int, int, unsigned char *);
+protected:
+	int add_client();
+	void remove_client(int fd);
 	static void *listen_thread(void *arg);
+	unsigned int calc_crc(unsigned char *ptr, int count);
  };
 
 class PacketSizeException : public invalid_argument {

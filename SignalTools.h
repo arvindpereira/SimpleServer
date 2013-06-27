@@ -44,7 +44,7 @@ class SingletonSignalHandler {
 	static SingletonSignalHandler *mySelf; // Will be required to get back to this instance.
 	SingletonSignalHandler() {};
 	SingletonSignalHandler(SingletonSignalHandler const &) {};
-	SingletonSignalHandler& operator=(SingletonSignalHandler const&) {};
+	SingletonSignalHandler& operator=(SingletonSignalHandler const&) { }; // Will Never be done.
 public:
 	static SingletonSignalHandler *getInstance();
 

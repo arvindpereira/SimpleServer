@@ -83,7 +83,6 @@ public:
 private:
 	void initializeFromString(std::string str) // expects: "x,y,z,phi,...,a_theta,a_psi\n"
 	{
-		uint i = 0;
 		for(uint i = 0; i <= 17; i++) // 17 expected commas
 		{
 			uint index = str.find_first_of(",",0);

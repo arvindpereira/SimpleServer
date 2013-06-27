@@ -1,6 +1,8 @@
 #ifndef __TIME_TOOLS_H__
 #define __TIME_TOOLS_H__
 
+#ifndef _WINDOWS_
+
 #include <iostream>
 #include <sstream>
 #include <cctype>
@@ -71,7 +73,9 @@ public:
 };
 
 
+
 };
 
+#endif // #ifndef _WINDOWS_
 
-#endif
+#endif // #define __TIME_TOOLS_H__

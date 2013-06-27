@@ -10,9 +10,13 @@ DEBUG = -g
 LFLAGS = -Wall $(DEBUG)
 CFLAGS = -Wall -c
 
+#SOURCES = Server.cpp \
+#	  SignalTools.cpp \
+#	  VerosimAUVInterface.cpp
+
 SOURCES = Server.cpp \
-	  VerosimAUVInterface.cpp \
-	  SignalTools.cpp
+	  SignalTools.cpp \
+	  VerosimMoosInterface.cpp
 
 HEADERS = Client.h \
 	  Server.h \
@@ -21,7 +25,8 @@ HEADERS = Client.h \
 
 OBJ = $(SOURCES:.cpp=.o)
 
-EXE = VerosimAUVinterfaceServer
+#EXE = VerosimAUVinterfaceServer
+EXE = VerosimMoosInterface
 
 all: $(EXE)
 
