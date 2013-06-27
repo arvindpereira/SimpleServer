@@ -23,7 +23,7 @@ EXE = VerosimAUVinterfaceServer
 
 all: $(EXE)
 
-$(EXE):	$(OBJ)
+$(EXE):	$(OBJ) $(HEADERS)
 	$(CC) -o $(EXE) $(OBJ) $(LFLAGS) $(LIBS)    
 
 .cpp.o:
