@@ -19,7 +19,7 @@ SERVER_HDRS = Client.h Server.h SignalTools.h CommandCallbackHandler.h VerosimAU
 SERVER_OBJS = $(SERVER_SRCS:.cpp=.o)
 
 CLIENT_HDRS = Client.h  SignalTools.h VerosimAUVCommProt.h
-CLIENT_SRCS = Client.cpp SignalTools.cpp
+CLIENT_SRCS = DemoClient.cpp SignalTools.cpp
 CLIENT_OBJS = $(CLIENT_SRCS:.cpp=.o)
 
 #EXE = VerosimAUVinterfaceServer
