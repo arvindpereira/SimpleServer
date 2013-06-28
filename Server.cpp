@@ -13,13 +13,22 @@
 
 using namespace std;
 
-TCP_Server::TCP_Server() :  MAX_DATA_LEN(1025) {
+/** Create an instance of the basic TCP_Server
+ * Default constructor.
+ * */
+TCP_Server::TCP_Server( int portNum ) :  MAX_DATA_LEN(1025) {
+	server_port = portNum;
 	StartServer();
 	sleep(1);
 }
 
-void TCP_Server::StartServer() {
-	CreateSocket();
+/** Start the server. Creates sockets,
+ * initializes number of connected clients,
+ * and creates a listen thread to check for
+ * connecting clients.
+ * */
+void TCP_Server::StartServer( ) {
+	CreateSocket( );
 	numClientConnected = 0;
 	terminateListener = false;
 	cerr<<"Server Started"<<endl;
@@ -31,6 +40,9 @@ void TCP_Server::StartServer() {
 	}
 }
 
+/** Stop the Server. Stops the server by terminating the
+ * listen thread.
+ */
 void TCP_Server::StopServer() {
 	terminateListener = true;
 	cerr<<"Stopping Server"<<endl;
@@ -39,15 +51,17 @@ void TCP_Server::StopServer() {
 	cerr<<"Server Stopped";
 }
 
-
-void TCP_Server::CreateSocket()
+/** Create a TCP/IP server socket, bind to server_port and
+ * listen for connections.
+ */
+void TCP_Server::CreateSocket(  )
 {
 	unlink("server_socket");
 	server_sockfd=socket(AF_INET, SOCK_STREAM,0);
 
 	server_address.sin_family=AF_INET;
 	server_address.sin_addr.s_addr=htonl(INADDR_ANY);
-	server_address.sin_port=htons(10000);
+	server_address.sin_port=htons( server_port );
 	server_len=sizeof(server_address);
 
 	bind(server_sockfd, (struct sockaddr*)&server_address, server_len);
@@ -61,6 +75,12 @@ void TCP_Server::CreateSocket()
 	FD_SET(server_sockfd,&readfds);	// readfds has server_sockfd...
 }
 
+/** An implementation to do CRC-CCITT based Cyclic Redundancy Checking
+ *
+ * @param ptr
+ * @param count
+ * @return CRC-16
+ */
 unsigned int TCP_Server::calc_crc(unsigned char *ptr, int count) {
   unsigned int crc,i;
 
@@ -77,6 +97,13 @@ unsigned int TCP_Server::calc_crc(unsigned char *ptr, int count) {
   return crc;
 }
 
+/** Send a server frame to client connected at a particular file-descriptor
+ *
+ * @param fd
+ * @param data
+ * @param len
+ * @return number of bytes written. 0 otherwise.
+ */
 int TCP_Server::send_frame(int fd, const char *data, int len )
 {
 	if( ClientTable.find(fd)!=ClientTable.end()) {
@@ -92,6 +119,10 @@ int TCP_Server::send_frame(int fd, const char *data, int len )
 	return 0;
 }
 
+/** Adds a client to the ClientTable. Once added, this client
+ * will be monitored for incoming data.
+ * @return client_sockfd the file-descriptor associated with the client that just connected.
+ */
 int TCP_Server::add_client()
 {
     client_len=sizeof(client_address);
@@ -111,10 +142,19 @@ int TCP_Server::add_client()
     return client_sockfd;
 }
 
+/** Get the client table connection information. Returns a
+ * map containing an integer corresponding to the file-descriptor associated
+ * with a client and its corresponding ClientInfo information.
+ * @return map<int,ClientInfo> a map with the client info associated with each file-descriptor.
+ */
 map<int, ClientInfo> TCP_Server::getClientTable() {
 	return ClientTable;
 }
 
+/** Remove client associated with the file descriptor provided
+ *
+ * @param fd file descriptor to be removed
+ */
 void TCP_Server::remove_client(int fd)
 {
 	close(fd);
@@ -169,6 +209,10 @@ void *TCP_Server::listen_thread(void *arg)
 	pthread_exit(NULL);
 }
 
+/** Close the server socket. Will close all the client connections
+ * first and then close the server socket for a graceful shutdown.
+ *
+ */
 void TCP_Server::CloseSocket() {
 	for(map<int,ClientInfo>::iterator it=ClientTable.begin();
 						   it!=ClientTable.end();++it)

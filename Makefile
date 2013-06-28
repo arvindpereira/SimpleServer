@@ -27,6 +27,7 @@ SERVER_EXE = VerosimMoosInterface
 CLIENT_EXE = DemoClient
 
 all: $(SERVER_EXE) $(CLIENT_EXE)
+	make docs
 
 $(SERVER_EXE):	$(SERVER_OBJS) $(SERVER_HDRS)
 	$(CC) -o $(SERVER_EXE) $(SERVER_OBJS) $(LFLAGS) $(LIBS)    
@@ -43,7 +44,15 @@ tar:
 clean:
 	rm -f $(OBJ)
 	rm -f $(EXE)
+	rm -rf docs
 
 OBJ = $(SERVER_OBJS) $(CLIENT_OBJS)
 EXE = $(SERVER_EXE) $(CLIENT_EXE)
+
+SOURCES = $(SERVER_SRCS) $(CLIENT_SRCS)
+HEADERS = $(SERVER_HDRS) $(CLIENT_HDRS)
+
+docs: $(SOURCES) $(HEADERS)
+	if command -v doxygen; then doxygen Doxyfile; \
+	else echo "Doxygen not found. Not making documentation."; fi
 

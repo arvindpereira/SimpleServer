@@ -1,3 +1,10 @@
+/**
+ * VerosimMoosInterface.cpp
+ *
+ * Created on: Jun 26, 2013
+ * \author Arvind A. de Menezes Pereira
+ *
+ */
 #include <iostream>
 #include <iomanip>
 #include <signal.h>
@@ -27,8 +34,8 @@ using std::endl;
 // A dummy class to show how a callback could be performed
 class Dummy {
 public:
-	static void JustPrintItOut( string s ) {
-		cout<<"Dummy says packet received has :"<<s<<endl;
+	static void JustPrintItOut(string s) {
+		cout << "Dummy says packet received has :" << s << endl;
 	}
 };
 
@@ -62,28 +69,25 @@ typedef void (*VSMoosCallbacktoDummyFunction)(string str);
  * As an aside, one might also want to use std::bind(1st/2nd) if one wants to use object-based callbacks.
  *
  */
-class VSMoosCallbacks : public CommandCallbackHandler {
+class VSMoosCallbacks: public CommandCallbackHandler {
 	VSMoosCallbacktoDummyFunction dummyFunc;
 public:
-	bool AddFunction( std::string _funcName, VSMoosCallbacktoDummyFunction _myFunc ) {
-		funcName       = _funcName;
-		dummyFunc         = _myFunc;
+	bool AddFunction(std::string _funcName,
+			VSMoosCallbacktoDummyFunction _myFunc) {
+		funcName = _funcName;
+		dummyFunc = _myFunc;
 		funcRegistered = true;
 		return funcRegistered;
 	}
 
-	bool CallFunction( std::string str ) {
-		if( funcRegistered ) {
-			dummyFunc( str );
+	bool CallFunction(std::string str) {
+		if (funcRegistered) {
+			dummyFunc(str);
 			return true;
 		}
 		return false;
 	}
 };
-
-
-
-
 
 /** Boiler plate code for creation of the actual connection to MOOS-IVP or
  *  ROS connections using the TCP_Server. My recommendation is to proceed
@@ -99,85 +103,83 @@ public:
  *  Plenty of ways to go about doing this. When it comes to the server itself,
  *  I allowed the read
  */
-class VerosimMoosInterface : public TCP_Server
-{
+class VerosimMoosInterface: public TCP_Server {
 	vector<VSMoosCallbacks> callbackTable;
 
 	VerosimAUVInterfaceModuleHandler *modHandler; // used to instantiate objects
 
 public:
-	VerosimMoosInterface() : TCP_Server()
-	{
+	VerosimMoosInterface(int _port) :
+		TCP_Server(_port) {
 		modHandler = new VerosimAUVInterfaceModuleHandler();
 	}
 
-	bool addCallback( string funcName, VSMoosCallbacktoDummyFunction func ) {
+	bool addCallback(string funcName, VSMoosCallbacktoDummyFunction func) {
 		VSMoosCallbacks newCallback;
 		bool success = newCallback.AddFunction(funcName, func);
-		if( success ) {
+		if (success) {
 			callbackTable.push_back(newCallback);
 		}
 		return success;
 	}
 
 	void check_command(int fd, int len, unsigned char *buf) {
-		char *sbuf = (char*)buf;
+		char *sbuf = (char*) buf;
 		string packetReceived = sbuf;
-		VerosimAUVInterfaceModuleObject* modObj = modHandler->fromString( packetReceived );
+		VerosimAUVInterfaceModuleObject* modObj = modHandler->fromString(
+				packetReceived);
 
 		//cout<<"RXed"<<packetReceived<<endl;
-		switch( modObj->getType() )
-		{
-			case VerosimAUVInterfaceModuleObject::State:
-			{
-				cout<<"State packet received :"<<endl;
-				VerosimAUVInterfaceModuleState *state = dynamic_cast<VerosimAUVInterfaceModuleState*>(modObj);
-				if( state != NULL ) {
-					cout<<state->toString();
-					// *** Publish the State to MOOS ***
-					// sendToMoosDB( state );
-				}
+		switch (modObj->getType()) {
+		case VerosimAUVInterfaceModuleObject::State: {
+			cout << "State packet received :" << endl;
+			VerosimAUVInterfaceModuleState *state =
+					dynamic_cast<VerosimAUVInterfaceModuleState*> (modObj);
+			if (state != NULL) {
+				cout << state->toString();
+				// *** Publish the State to MOOS ***
+				// sendToMoosDB( state );
+			}
+		}
+			break;
+		case VerosimAUVInterfaceModuleObject::PathSegment: {
+			cout << "Path segment received :" << endl;
+			VerosimAUVInterfaceModulePathSegmentCharacterization
+					*pathSegment =
+							dynamic_cast<VerosimAUVInterfaceModulePathSegmentCharacterization*> (modObj);
+			if (pathSegment != NULL) {
+				cout << pathSegment->toString();
+				// Server should not necessarily receive path segments from clients, but
+				// assuming this can happen, we could do something with it here.
+				// Perhaps relay it Verosim (if it came from another client instead).
+			}
+		}
+			break;
+		case VerosimAUVInterfaceModuleObject::AutopilotCommand: {
+			cout << "AutopilotCommand received" << endl;
+			VerosimAUVInterfaceModuleAutopilotCommand
+					* autopilotCommand =
+							dynamic_cast<VerosimAUVInterfaceModuleAutopilotCommand*> (modObj);
+			if (autopilotCommand != NULL) {
+				cout << autopilotCommand->toString();
+				// Server should not necessarily receive autopilot commands from clients, but
+				// assuming this can happen, we could do something with it here.
+				// Perhaps relay it Verosim (if it came from another client instead).
+			}
+		}
+			break;
+		default: {
+			cout << "Invalid/Unknown command received" << endl;
+			cout << "Checking Callbacks...";
+			for (unsigned int i = 0; i < callbackTable.size(); i++) {
+				callbackTable[i].CallFunction(packetReceived);
 			}
 			break;
-			case VerosimAUVInterfaceModuleObject::PathSegment:
-			{
-				cout<<"Path segment received :"<<endl;
-				VerosimAUVInterfaceModulePathSegmentCharacterization *pathSegment =
-						dynamic_cast<VerosimAUVInterfaceModulePathSegmentCharacterization*>(modObj);
-				if( pathSegment != NULL ) {
-					cout<<pathSegment->toString();
-					// Server should not necessarily receive path segments from clients, but
-					// assuming this can happen, we could do something with it here.
-					// Perhaps relay it Verosim (if it came from another client instead).
-				}
-			}
-			break;
-			case VerosimAUVInterfaceModuleObject::AutopilotCommand:
-			{
-				cout<<"AutopilotCommand received"<<endl;
-				VerosimAUVInterfaceModuleAutopilotCommand * autopilotCommand =
-						dynamic_cast<VerosimAUVInterfaceModuleAutopilotCommand*>(modObj);
-				if( autopilotCommand != NULL ) {
-					cout<<autopilotCommand->toString();
-					// Server should not necessarily receive autopilot commands from clients, but
-					// assuming this can happen, we could do something with it here.
-					// Perhaps relay it Verosim (if it came from another client instead).
-				}
-			}
-			break;
-			default:
-			{
-				cout<<"Invalid/Unknown command received"<<endl;
-				cout<<"Checking Callbacks...";
-				for(unsigned int i=0;i<callbackTable.size();i++) {
-					callbackTable[i].CallFunction( packetReceived );
-				}
-				break;
-			}
+		}
 		}
 	}
 
-} myServer ; // the server instance we are using.
+} myServer(10000); // the server instance we are using. Listens on port 10000.
 
 
 /** Function that gracefully exits even if the program is quit using
@@ -186,11 +188,11 @@ public:
  * the assumption is that we want to quit anyway.
  */
 void quitApp(int signum) {
-	cerr<<"Quitting Application.";
+	cerr << "Quitting Application.";
 	myServer.StopServer();
 	SingletonSignalHandler::getInstance()->endSignalCapture();
 	sleep(1);
-	cout<<"\nDone cleaning up.\nGoodbye..."<<endl;
+	cout << "\nDone cleaning up.\nGoodbye..." << endl;
 	exit(0);
 }
 
@@ -198,8 +200,10 @@ void quitApp(int signum) {
  * Ctrl-C or Ctrl-Z are pressed.
  */
 void SetupMyselfForExit() {
-	SingletonSignalHandler::getInstance()->captureSignal( InterruptSignal, ::quitApp );
-	SingletonSignalHandler::getInstance()->captureSignal( TerminateSignal, ::quitApp );
+	SingletonSignalHandler::getInstance()->captureSignal(InterruptSignal,
+			::quitApp);
+	SingletonSignalHandler::getInstance()->captureSignal(TerminateSignal,
+			::quitApp);
 }
 
 /** A simple random location generator. Should keep the AUV chasing ghosts for a long time
@@ -210,28 +214,30 @@ void SetupMyselfForExit() {
  *	@return string to be sent to Verosim
  *
  * */
-string generateRandomPathSegment( double &x, double &y, double &z, double t )
-{
-	double rand1 = rand()%100/100.0, rand2=rand()%180/180.0*M_PI;
+string generateRandomPathSegment(double &x, double &y, double &z, double t) {
+	double rand1 = rand() % 100 / 100.0, rand2 = rand() % 180 / 180.0 * M_PI;
 	double tSwitch = 2; //Switch to random commands after 20 seconds
 	const int RandomJumpRange = 100.0;
 	const double minDepth = 2.0, maxDepth = 60.0;
 	double z_change_factor = 0.1;
 	double vel = 1.0;
-	static double lastT; double sampleTime = 20;
+	static double lastT;
+	double sampleTime = 20;
 
-	if( t > tSwitch ) {
-		if( t - lastT > sampleTime ) {
+	if (t > tSwitch) {
+		if (t - lastT > sampleTime) {
 			lastT = t;
-			x=rand1*RandomJumpRange; y = rand2*RandomJumpRange;
+			x = rand1 * RandomJumpRange;
+			y = rand2 * RandomJumpRange;
 			z = z - z_change_factor;
-			if( !(z_change_factor < minDepth || z_change_factor> maxDepth ) ) {
-				z_change_factor*=-1;
+			if (!(z_change_factor < minDepth || z_change_factor > maxDepth)) {
+				z_change_factor *= -1;
 			}
 		}
 
 	}
-	VerosimAUVInterfaceModulePathSegmentCharacterization auvPathSegment(vel,x,y,z);
+	VerosimAUVInterfaceModulePathSegmentCharacterization auvPathSegment(vel, x,
+			y, z);
 	return auvPathSegment.toString();
 }
 
@@ -242,34 +248,33 @@ string generateRandomPathSegment( double &x, double &y, double &z, double t )
  * @param t
  * @return string to be sent to Verosim.
  */
-string generateHelixUsingAutopilotCommand( double &psi, double &z, double t ) {
-	double psi_change_factor =0.05, z_change_factor = 0.1;
+string generateHelixUsingAutopilotCommand(double &psi, double &z, double t) {
+	double psi_change_factor = 0.05, z_change_factor = 0.1;
 	double tSwitch = 20; //Switch to random commands after 20 seconds
 	const double minDepth = 2.0, maxDepth = 60.0;
 	double vel = 1.0;
 	static double lastT;
 	double sampleTime = 1.0;
 
-	if( t > tSwitch ) {
-		if( t - lastT > sampleTime ) {
+	if (t > tSwitch) {
+		if (t - lastT > sampleTime) {
 			lastT = t;
-			psi = psi+ psi_change_factor;
-			if( psi > M_PI ) {
+			psi = psi + psi_change_factor;
+			if (psi > M_PI) {
 				psi = -M_PI;
-			} else if ( psi< -M_PI ) {
+			} else if (psi < -M_PI) {
 				psi = M_PI;
 			}
 			z = z - z_change_factor;
-			if( !(z_change_factor < minDepth || z_change_factor> maxDepth ) ) {
-				z_change_factor*=-1;
+			if (!(z_change_factor < minDepth || z_change_factor > maxDepth)) {
+				z_change_factor *= -1;
 			}
 		}
 	}
 
-	VerosimAUVInterfaceModuleAutopilotCommand auvAutoPilotCommand(vel,psi,z);
+	VerosimAUVInterfaceModuleAutopilotCommand auvAutoPilotCommand(vel, psi, z);
 	return auvAutoPilotCommand.toString();
 }
-
 
 int main(int argc, char *argv[]) {
 	// Capture quit signals
@@ -279,7 +284,7 @@ int main(int argc, char *argv[]) {
 	TimeTools myTimer;
 
 	// Initialize our randomizer
-	srand(time(NULL));
+	srand( time(NULL));
 
 	// Setup a callback function just for fun
 	Dummy dumbDum;
@@ -287,25 +292,30 @@ int main(int argc, char *argv[]) {
 
 	myServer.addCallback(string("Just a Dummy"), fPtr);
 
-	double x=0,y=0,z=0,psi=0.0;
+	double x = 0, y = 0, z = 0, psi = 0.0;
 
 	// Create a table to get information about the clients that are connected.
 	map<int, ClientInfo> clTable;
 	map<int, ClientInfo>::iterator clt_iter;
-	while ( true ) {
-		usleep( 100000 );
+	while (true) {
+		usleep(100000);
 		//sleep( 5 );
 		cout.width(14);
 		clTable = myServer.getClientTable();
 		// Get an autopilot command
-		string autoPilotCmd = generateHelixUsingAutopilotCommand(psi,z,myTimer.timeSinceStart());
-		string pathSegmentCmd = generateRandomPathSegment( x,y,z,myTimer.timeSinceStart());
+		string autoPilotCmd = generateHelixUsingAutopilotCommand(psi, z,
+				myTimer.timeSinceStart());
+		string pathSegmentCmd = generateRandomPathSegment(x, y, z,
+				myTimer.timeSinceStart());
 
-		for( clt_iter=clTable.begin();clt_iter!=clTable.end(); clt_iter++ ) {
-			pair<int,ClientInfo> clientInfo = *clt_iter; // Could also use information from ClientInfo instead of broadcasting.
+		for (clt_iter = clTable.begin(); clt_iter != clTable.end(); clt_iter++) {
+			pair<int, ClientInfo> clientInfo = *clt_iter; // Could also use information from ClientInfo instead of broadcasting.
 			//myServer.send_frame(clientInfo.first, autoPilotCmd.c_str(), autoPilotCmd.length());
-			myServer.send_frame(clientInfo.first, pathSegmentCmd.c_str(), pathSegmentCmd.length());
+			myServer.send_frame(clientInfo.first, pathSegmentCmd.c_str(),
+					pathSegmentCmd.length());
 		}
-		cout<<std::fixed<<std::setprecision(6)<<myTimer.timeSinceStart()<<'\r'; cout.flush();
+		cout << std::fixed << std::setprecision(6) << myTimer.timeSinceStart()
+				<< '\r';
+		cout.flush();
 	}
 }

@@ -1,3 +1,7 @@
+/**
+ * \brief Client.h
+ * \author Arvind A. de Menezes Pereira
+ */
 #ifndef __SIMPLE_CLIENT_H__
 #define __SIMPLE_CLIENT_H__
 
