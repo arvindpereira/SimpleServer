@@ -12,7 +12,6 @@ using namespace ArvindsTools;
 
 TCP_Client client;
 
-
 /** Function that gracefully exits even if the program is quit using
  * Ctrl-C
  * @param signum the signal received. I'm not doing anything with this here, because
@@ -35,7 +34,7 @@ void SetupMyselfForExit() {
 	SingletonSignalHandler::getInstance()->captureSignal( TerminateSignal, ::quitApp );
 }
 
-int main() {
+int main(int argc, char *argv[]) {
 	SetupMyselfForExit();
 	TimeTools myTimer;
 

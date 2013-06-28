@@ -271,7 +271,7 @@ string generateHelixUsingAutopilotCommand( double &psi, double &z, double t ) {
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
 	// Capture quit signals
 	SetupMyselfForExit();
 
