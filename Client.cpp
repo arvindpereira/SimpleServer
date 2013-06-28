@@ -38,12 +38,14 @@ int main(int argc, char *argv[]) {
 	SetupMyselfForExit();
 	TimeTools myTimer;
 
+	string s = argv[0];
+	if (argc>1) s = argv[1];
 	client.CreateSocket("localhost","10000");
 
 	ostringstream sout;
 	while( true ) {
 		usleep(100000);
-		sout<<std::fixed<<setprecision(6)<<myTimer.timeSinceStart()<<"\n"; sout.flush();
+		sout<<'\n'<< s <<"  "<<std::fixed<<setprecision(6)<<myTimer.timeSinceStart()<<"\n"; sout.flush();
 		client.send_frame( sout.str() );
 	}
 
