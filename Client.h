@@ -1,6 +1,11 @@
 /**
  * \brief Client.h
  * \author Arvind A. de Menezes Pereira
+ *
+ * \summary This is a multi-platform client which is designed to work across multiple operating systems.
+ * Currently it relies only upon the standard library (I like Boost, but don't want my code to rely heavily on
+ * such a large library to compile in a new place). The Windows socket API client has not been tested so far
+ * but I should get around to that soon (hopefully). The client works on both OS-X and Linux.
  */
 #ifndef __SIMPLE_CLIENT_H__
 #define __SIMPLE_CLIENT_H__
