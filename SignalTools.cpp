@@ -4,9 +4,9 @@
  *  Created on: Jun 26, 2013
  *      Author: arvind
  */
-#include "SignalTools.h"
-
 #ifndef _WINDOWS_ // Never use this in Windoze... ;-)
+
+#include "SignalTools.h"
 
 namespace ArvindsTools {
 

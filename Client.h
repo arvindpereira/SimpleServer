@@ -32,11 +32,14 @@
 #include <stdexcept>
 #include <string>
 
+#include "TimeTools.h"
+
 
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+using namespace ArvindsTools;
 
 // size of our buffer
 #define MAX_CLIENT_BUFSIZE 4096
@@ -160,7 +163,11 @@ public:
 	char buf[MAX_CLIENT_BUFSIZE];
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
+	fd_set readfds, testfds;
 	char s[INET6_ADDRSTRLEN];
+	bool terminateReader;
+	pthread_t reader;
+	TimeTools readTimer;
 private:
 	// get sockaddr, IPv4 or IPv6:
 	void *get_in_addr(struct sockaddr *sa)
@@ -177,7 +184,13 @@ public:
 	    memset(&hints, 0, sizeof hints);
 	    hints.ai_family = AF_UNSPEC;
 	    hints.ai_socktype = SOCK_STREAM;
-
+	    terminateReader = false;
+	    int res=pthread_create(&reader,NULL,read_thread, this );
+	    if(res!=0)
+	    {
+	    	perror("Read thread creation failed.");
+	    	exit(EXIT_FAILURE);
+	    }
 	}
 
 	bool CreateSocket( string ip_addr, string port ) {
@@ -209,8 +222,50 @@ public:
 		inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
 		            s, sizeof s);
 		cout<<"client: connecting to "<< s<<endl;
+
+	    FD_ZERO(&readfds);	// Initialize readfds with no fds...
+	    FD_SET( sockfd,&readfds );	// readfds has sockfd...
+
 		freeaddrinfo(servinfo); // all done with this structure
+		return true;
 	}
+
+	/** Listen thread - does most of the heavy lifting */
+	static void *read_thread(void *arg)
+	{
+		TCP_Client *clientInstance=reinterpret_cast<TCP_Client*>(arg);
+
+
+		while( !(clientInstance->terminateReader) )
+		{
+			usleep(10);
+			clientInstance->testfds=clientInstance->readfds;
+			struct timeval timeout; timeout.tv_sec=1; timeout.tv_usec=500000;
+			int result=select(FD_SETSIZE,&(clientInstance->testfds),(fd_set*)0,(fd_set*)0,&timeout);
+			if ( result<0 ) break;
+			for(int fd=0; fd<FD_SETSIZE; fd++)
+			{
+			  if( FD_ISSET(fd,&(clientInstance->testfds)) )
+			  {
+			  	  int nread = 0;
+				  ioctl(fd,FIONREAD,&nread);
+				  if(nread==0)
+				  {
+					clientInstance->CloseSocket();
+				  }
+				  else {
+					string data;
+					clientInstance->receive(data);
+					clientInstance->check_frame(data);
+				  }
+			   }
+			}
+		}
+		if(clientInstance->terminateReader)
+		  cerr<<"Client read thread is exiting..."<<endl;
+		pthread_exit(NULL);
+	}
+
 
 	int receive( string &rx_data ) {
 		if ((numbytes = recv(sockfd, buf, MAX_CLIENT_BUFSIZE-1, 0)) == -1) {
@@ -218,14 +273,28 @@ public:
 		        exit(1);
 		}
 		rx_data=string(buf);
+		return rx_data.length();
 	}
 
-	int send_frame( string tx_data ) {
+	virtual int send_frame( string tx_data ) {
 		if ((numbytes = send(sockfd, (char*)tx_data.c_str(), tx_data.length(), 0)) == -1) {
 			perror("send");
 			exit(1);
 		}
 	}
+
+	virtual int check_frame( string data ) {
+		cout<<readTimer.timeSinceStart()<<" Received:"<<data<<'\n'; cout.flush();
+	}
+
+	int CloseSocket() {
+			// shutdown the send half of the connection since no more data will be sent
+		terminateReader = true;
+		void *thread_result;
+		pthread_join( reader, &thread_result );
+		return close(sockfd);
+	}
+
 
 
 #endif

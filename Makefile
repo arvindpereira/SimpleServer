@@ -14,31 +14,36 @@ CFLAGS = -Wall -c
 #	  SignalTools.cpp \
 #	  VerosimAUVInterface.cpp
 
-SOURCES = Server.cpp \
-	  SignalTools.cpp \
-	  VerosimMoosInterface.cpp
+SERVER_SRCS = Server.cpp SignalTools.cpp VerosimMoosInterface.cpp
+SERVER_HDRS = Client.h Server.h SignalTools.h CommandCallbackHandler.h VerosimAUVCommProt.h
+SERVER_OBJS = $(SERVER_SRCS:.cpp=.o)
 
-HEADERS = Client.h \
-	  Server.h \
-	  SignalTools.h \
-	  VerosimAUVCommProt.h
-
-OBJ = $(SOURCES:.cpp=.o)
+CLIENT_HDRS = Client.h  SignalTools.h VerosimAUVCommProt.h
+CLIENT_SRCS = Client.cpp SignalTools.cpp
+CLIENT_OBJS = $(CLIENT_SRCS:.cpp=.o)
 
 #EXE = VerosimAUVinterfaceServer
-EXE = VerosimMoosInterface
+SERVER_EXE = VerosimMoosInterface
+CLIENT_EXE = DemoClient
 
-all: $(EXE)
+all: $(SERVER_EXE) $(CLIENT_EXE)
 
-$(EXE):	$(OBJ) $(HEADERS)
-	$(CC) -o $(EXE) $(OBJ) $(LFLAGS) $(LIBS)    
+$(SERVER_EXE):	$(SERVER_OBJS) $(SERVER_HDRS)
+	$(CC) -o $(SERVER_EXE) $(SERVER_OBJS) $(LFLAGS) $(LIBS)    
 
+$(CLIENT_EXE): $(CLIENT_OBJS) $(CLIENT_HDRS)
+	$(CC) -o $(CLIENT_EXE) $(CLIENT_OBJS) $(LFLAGS) $(LIBS)    
+	
 .cpp.o:
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
 tar:
-	tar -czf $(EXE).tar.gz $(SOURCES) $(HEADERS) Makefile
+	tar -czf $(SERVER_EXE)_$(CLIENT_EXE).tar.gz $(SOURCES) $(HEADERS) Makefile
 
 clean:
 	rm -f $(OBJ)
 	rm -f $(EXE)
+
+OBJ = $(SERVER_OBJS) $(CLIENT_OBJS)
+EXE = $(SERVER_EXE) $(CLIENT_EXE)
+
