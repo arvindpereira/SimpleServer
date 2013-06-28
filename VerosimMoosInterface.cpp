@@ -293,7 +293,9 @@ int main() {
 	map<int, ClientInfo> clTable;
 	map<int, ClientInfo>::iterator clt_iter;
 	while ( true ) {
-		usleep( 100000 ); cout.width(14);
+		//usleep( 10000 ); 
+		sleep( 5 );
+		cout.width(14);
 		clTable = myServer.getClientTable();
 		// Get an autopilot command
 		string autoPilotCmd = generateHelixUsingAutopilotCommand(psi,z,myTimer.timeSinceStart());
