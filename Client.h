@@ -42,7 +42,7 @@
 #include <string>
 
 #include "TimeTools.h"
-
+#include "ScopedLock.h"
 
 using std::cout;
 using std::cerr;
@@ -176,6 +176,7 @@ public:
 	char s[INET6_ADDRSTRLEN];
 	bool terminateReader;
 	pthread_t reader;
+	pthread_mutex_t readMutex;
 	TimeTools readTimer;
 private:
 	// get sockaddr, IPv4 or IPv6:
@@ -196,10 +197,9 @@ public:
 	    terminateReader = false;
 	    int res=pthread_create(&reader,NULL,read_thread, this );
 	    if(res!=0)
-	    {
-	    	perror("Read thread creation failed.");
-	    	exit(EXIT_FAILURE);
-	    }
+	    { perror("Read thread creation failed."); exit(EXIT_FAILURE); }
+	    res = pthread_mutex_init( &readMutex, NULL );
+	    if (res!=0) { perror("Mutex init failed."); exit(EXIT_FAILURE); }
 	}
 
 	bool CreateSocket( string ip_addr, string port ) {
@@ -290,10 +290,12 @@ public:
 			perror("send");
 			exit(1);
 		}
+		return numbytes;
 	}
 
 	virtual int check_frame( string data ) {
 		cout<<readTimer.timeSinceStart()<<" Received:"<<data<<'\n'; cout.flush();
+		return data.length();
 	}
 
 	int CloseSocket() {
