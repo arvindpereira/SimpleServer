@@ -8,7 +8,7 @@ LIBS = -L/usr/lib/ -lm -pthread -lpthread
 CC = g++
 DEBUG = -g
 LFLAGS = -Wall $(DEBUG)
-CFLAGS = -Wall -c
+CFLAGS = -Wall -c -D_POSIX_PTHREAD_SEMANTICS
 
 SERVER_SRCS = Server.cpp SignalTools.cpp VerosimMoosInterface.cpp
 SERVER_HDRS = Client.h Server.h SignalTools.h CommandCallbackHandler.h VerosimAUVCommProt.h
@@ -20,6 +20,7 @@ CLIENT_OBJS = $(CLIENT_SRCS:.cpp=.o)
 
 SERVER_EXE = VerosimMoosInterface
 CLIENT_EXE = DemoClient
+TOPLEVEL_FOLDER = SimpleServer
 
 all: $(SERVER_EXE) $(CLIENT_EXE)
 	@echo "-------------------------Done------------------------------"
@@ -36,14 +37,15 @@ $(CLIENT_EXE): $(CLIENT_OBJS) $(CLIENT_HDRS)
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
 tar:
-	tar -czf $(TAR_FILE_NAME) $(SOURCES) $(HEADERS) Makefile
+	make clean; cd ..; tar -czf $(TAR_FILE_NAME) $(TOPLEVEL_FOLDER)
+	cd ..; mv *$(TOPLEVEL_FOLDER).tar.gz $(TOPLEVEL_FOLDER)/
 
 clean:
 	rm -f $(OBJ)
 	rm -f $(EXE)
 	rm -rf docs
 	
-TAR_FILE_NAME = `date +'%Y%m%d_%H%M%S_'`$(SERVER_EXE)$(CLIENT_EXE).tar.gz
+TAR_FILE_NAME = `date +'%Y%m%d_%H%M%S_'`$(TOPLEVEL_FOLDER).tar.gz
 
 OBJ = $(SERVER_OBJS) $(CLIENT_OBJS)
 EXE = $(SERVER_EXE) $(CLIENT_EXE)
