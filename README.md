@@ -14,4 +14,6 @@ This project depends upon my library ArvindsTools. Please download that project 
 so that it points to the location of ArvindsTools (for the included headers) and finally copy (or install) the lib_arvinds_tools.so
 file into the directory of this project.
 
+The recommended way to do so is to put ArvindsTools at the same level as SimpleServer. Compile them separately and simply copy over the file lib_arvinds_tools.so into your directory. You should not have to modify ArvindsTools at all for the most part (if I designed it correctly).
+
 The documentation can be found here: http://robotics.usc.edu/~ampereir/SimpleServer/docs/html/index.html
