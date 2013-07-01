@@ -10,4 +10,8 @@ The ultimate goal of this interface is to act as a relay between various simulat
 
 I have also included example code for how callbacks can be setup using objects.
 
+This project depends upon my library ArvindsTools. Please download that project first, modify the Makefile in this project
+so that it points to the location of ArvindsTools (for the included headers) and finally copy (or install) the lib_arvinds_tools.so
+file into the directory of this project.
+
 The documentation can be found here: http://robotics.usc.edu/~ampereir/SimpleServer/docs/html/index.html
