@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 
 	string s = argv[0];
 	if (argc>1) s = argv[1];
-	client.CreateSocket("localhost","10000");
+	client.CreateSocket( s,"10000");
 
 	ostringstream sout;
 	while( true ) {
